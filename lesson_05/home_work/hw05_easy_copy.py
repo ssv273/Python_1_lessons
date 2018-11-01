@@ -26,8 +26,9 @@ except OSError:
 # Задача-2:
 # Напишите скрипт, отображающий папки текущей директории.
 path = os.getcwd()
-for root, dirs, files in os.walk(path):
-    print(root)
+print(os.listdir(path))
+# for root, dirs, files in os.walk(path):
+#     print(root)
 
 # Задача-3:
 # Напишите скрипт, создающий копию файла, из которого запущен данный скрипт.
@@ -38,7 +39,5 @@ import sys
 # print(sys.argv)
 path = ''.join(sys.argv)
 file = os.path.basename(path)
-print(file)
 file_copy = file[:len(file)-3]+'_copy'+ file[len(file)-3:]
-print(file_copy)
 shutil.copy(file, file_copy)
