@@ -38,5 +38,7 @@ import sys
 # print(sys.argv)
 path = ''.join(sys.argv)
 file = os.path.basename(path)
+print(file)
 file_copy = file[:len(file)-3]+'_copy'+ file[len(file)-3:]
+print(file_copy)
 shutil.copy(file, file_copy)
