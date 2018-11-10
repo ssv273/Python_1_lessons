@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+__author__ = 'Сащенко С.В.'
+
 """
 == Лото ==
 
@@ -57,3 +59,110 @@
 модуль random: http://docs.python.org/3/library/random.html
 
 """
+import random
+import re
+import sys
+import os
+
+
+# вывод карточек на печать
+def printing(a, b):
+    print('\n', '=' * 3, 'Ваша карточка', '=' * 3)
+    for i in a:
+        print(*i)
+    print('\n', '=' * 1, 'Карточка компьютера', '=' * 1)
+    for el in b:
+        print(*el)
+    print('\n')
+
+
+# 1 делаем карточки
+my_card = [[], [], []]
+comp_card = [[], [], []]
+
+my_list = sorted(random.sample(range(1, 91), 27))
+comp_list = sorted(random.sample(range(1, 91), 27))
+
+# 2.2 разбиваем эти списки на 3 по 9
+q = 0
+end = 9
+begin = 0
+while q < 3:
+    my_card[q] = my_list[begin:end]
+    comp_card[q] = comp_list[begin:end]
+    begin = end
+    end += 9
+    q += 1
+# 2.3 удаляем из этих списков рандомно 4 цифры
+# 2.3.1 создаем список индексов удаляемых значений и заменяем на пробелы, чтобы сохранить длину списка
+for el in my_card:
+    my_del_ind = random.sample(range(0, 9), 4)
+    for i in my_del_ind:
+        el[i] = ' '
+for el in comp_card:
+    comp_del_ind = random.sample(range(0, 9), 4)
+    for i in comp_del_ind:
+        el[i] = ' '
+
+# 3 всего у нас 90 бочонков, создадим из них список и перемешаем
+list_boch = random.sample(range(1, 91), 90)
+# 3.1 теперь нам надо создать цикл, который будет перебирать бочонки и выводить номер боченка
+for boch in list_boch:
+    print('Новый боченок {} (осталось {})'.format(boch, len(list_boch[list_boch.index(boch):]) - 1))
+    printing(my_card, comp_card)
+    # проверяем, остались ли в карточке игрока и компьютера цифры
+    pattern = '[0-9]+'
+    win = 0
+    comp_win = 0
+    for el in my_card:
+        el_str = ''
+        for i in el:
+            el_str = el_str + str(i)
+            my_res = re.search(pattern, el_str)
+            if my_res == None:
+                win += 1
+            else:
+                my_res = False
+    if win == 3:
+        sys.exit('Поздравляем, Вы победили!')
+    for el in comp_card:
+        el_str = ''
+        for i in el:
+            el_str = el_str + str(i)
+            comp_res = re.search(pattern, el_str)
+            if comp_res == None:
+                comp_win += 1
+            else:
+                comp_res = False
+    if comp_win == 3:
+        sys.exit('Поздравляем, Вы победили!')
+
+    # моделируем поведение игрока
+    # в каждем цикле есть 2 варианта: продолжить или зачеркнуть
+    answer = input('Внимательно помотрите, есть ли на карточке номер Вашего боченка\n'
+                   'и выберите зачеркнуть цифру (y) или продолжить (n)')
+    if answer == 'y':
+        f = False
+        for el in my_card:
+            if boch in el:
+                el[el.index(boch)] = '-'
+                f = True
+                print(f)
+                continue
+        if f == False:
+            sys.exit('Ошибочка вышла, нет такого боченка на Вашей карточке, Вы проиграли.')
+
+    if answer == 'n':
+        f = False
+        for el in my_card:
+            if boch in el:
+                f = True
+                print('Ошибочка вышла, такой боченок есть на Вашей карточке, Вы проиграли.')
+                sys.exit()
+    if answer != 'y' and answer != 'n':
+        sys.exit('введен неправильный ответ, программа завершена')
+    # теперь моделируем поведение компьютера
+    for el in comp_card:
+        if boch in el:
+            el[el.index(boch)] = '-'
+    print('\n' * 20)
