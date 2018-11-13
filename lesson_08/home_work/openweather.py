@@ -1,4 +1,3 @@
-
 """
 == OpenWeatherMap ==
 
@@ -122,4 +121,104 @@ OpenWeatherMap — онлайн-сервис, который предостав�
         ...
 
 """
+import json
+import os
+import requests
+import sqlite3
 
+
+def tempr(real_temp, base_temp):
+    if real_temp != base_temp:
+        return True
+    else:
+        return False
+
+
+path = os.path.join('data', 'city.list.json')
+with open(path, 'r', encoding='utf-8') as fh:
+    data_1 = json.load(fh)
+# тут мы получили СПИСОК СЛОВАРЕЙ
+# теперь попробуем вытащить список стран
+country_list = []
+for i in data_1:
+    if i['country'] in country_list:
+        pass
+    else:
+        country_list.append(i['country'])
+# получили список стран, можем напечатать его по запросу
+
+# так, теперь у нас есть список стран
+# теперь попросим пользвателя ввести название города
+city = input('Введите название города')
+city = city.capitalize()
+# так город мы ввели, теперь надо получить его ID
+id_city = 0
+flag = True
+id_list = []
+country_list1 = []
+for i in data_1:
+    if i['name'] == city:
+        id_list.append(i['id'])
+        country_list1.append(i['country'])
+        flag = False
+if flag:
+    print('Имя не найдено')
+# теперь нам надо уточнить выбор города, если их несколько
+if len(country_list1) > 1:
+    b = 1
+    print('Город с таким именем найден в следующих странах: ')
+    for el in country_list1:
+        print('{}. страна - {}'.format(b, el))
+        b += 1
+    answer_city = int(input('Уточните пожалуйста в какой стране находится Ваш город введя цифру'))
+    id_city = id_list[answer_city - 1]
+else:
+    id_city = id_list[0]
+# теперь надо получить погоду для выбранного города
+api_url = 'http://api.openweathermap.org/data/2.5/weather?'
+
+my_app_id = '3c90583990e55c1d46f3312bb0f98d34'
+data_list = {"id": id_city, "appid": my_app_id, "units": "metric"}
+inquiry = requests.get(api_url, params=data_list)
+data = inquiry.json()
+
+# тааак, нам вернулся словарь
+weather = [(data["id"], data["name"], data["dt"], data["main"]["temp"], data["weather"][0]["id"])]
+temp = (weather[0][3])
+
+# так, теперь попробуем создать БД
+
+
+# f = os.path.isfile("mydatabase.db")
+# if f = False:
+#
+conn = sqlite3.connect("mydatabase.db")
+c = conn.cursor()
+try:  # проверяем создана ли таблица
+    c.execute(
+        '''CREATE TABLE weather (id_города INTEGER PRIMARY KEY, Город VARCHAR(255), Дата DATE, Температура INTEGER, id_погоды INTEGER)''')
+    conn.commit()
+    c.executemany("INSERT INTO weather VALUES (?, ?, ?, ?, ?)", weather)
+    conn.commit()
+
+except:  # если создана, то
+    try:
+        # проверяем, есть ли запись с таким городом, если нет то создаем
+        c.executemany("INSERT INTO weather VALUES (?, ?, ?, ?, ?)", weather)
+        conn.commit()
+    except:  # если есть, то проверяем температуру и изменяем запись, если она изменилась
+        sql = "SELECT * FROM weather WHERE id_города=?"
+        c.execute(sql, [(str(id_city))])
+        s = c.fetchall()
+        print(s)
+        if tempr(temp, s[0][3]):
+            print('Температура, зафиксированная в БД = {}, фактическа = {}, заменяем'.format(s[0][3], temp))
+            c.execute(
+                """REPLACE INTO weather (id_города, Город, Дата, Температура, id_погоды) VALUES (?, ?, ?, ?, ?)""",
+                (data["id"], data['name'], data["dt"], data["main"]["temp"], data["weather"][0]["id"]))
+            conn.commit()
+sql_1 = "SELECT * FROM weather WHERE id_города=?"
+c.execute(sql_1, [(str(id_city))])
+s = c.fetchall()
+print(s)
+print('Эта запись добавлена в базу данных')
